@@ -5,6 +5,10 @@ from joy import *
 # TODO May want to constrain motors to be only certain names to prevent motors
 # from being accidentally switched
 
+MOTOR_LEFT = 0
+MOTOR_RIGHT = 2
+MOTOR_LASER = 1
+
 sleep(0.5)
 
 class Controller( JoyApp ):
@@ -75,15 +79,15 @@ class Controller( JoyApp ):
         self.turning_rate = 0.0
         self.moving_rate = 0.0
 
-        self.motor1 = self.robot.items()[0][1]
-        self.motor2 = self.robot.items()[1][1]
-        self.motor3 = self.robot.items()[2][1]
-        self.motor1.set_mode(1)
-        self.motor2.set_mode(1)
-        self.motor3.set_mode(1)
-        self.motor1.set_torque(0)
-        self.motor2.set_torque(0)
-        self.motor3.set_torque(0)
+        self.motor_left = self.robot.items()[MOTOR_LEFT][1]
+        self.motor_right = self.robot.items()[MOTOR_RIGHT][1]
+        self.motor_laser = self.robot.items()[MOTOR_LASER][1]
+        self.motor_left.set_mode(1)
+        self.motor_right.set_mode(1)
+        self.motor_laser.set_mode(1)
+        self.motor_left.set_torque(0)
+        self.motor_right.set_torque(0)
+        self.motor_laser.set_torque(0)
 
     def onEvent(self, evt):
         # We only care about midi events right now
@@ -117,8 +121,8 @@ class Controller( JoyApp ):
 
     def set_motor_speeds(self):
         motor_left_torq, motor_right_torq = compute_torques()
-        self.motor1.pna.mem_write_fast(self.motor1.mcu.moving_speed, motor_left_torq)
-        self.motor2.pna.mem_write_fast(self.motor2.mcu.moving_speed, motor_right_torq)
+        self.motor_left.pna.mem_write_fast(self.motor_left.mcu.moving_speed, motor_left_torq)
+        self.motor_right.pna.mem_write_fast(self.motor_right.mcu.moving_speed, motor_right_torq)
 
 
 app = Controller("#output ", robot=dict(count=3, port='/dev/ttyACM0'))
