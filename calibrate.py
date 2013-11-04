@@ -31,7 +31,8 @@ class Controller( JoyApp ):
         {key: 0 for key in events},
         {key: 0 for key in events},
     ]
-    prev_pos = 0
+    num_turns = 10
+    just_started = True
 
     def __init__(self, spec, *arg, **kw):
         JoyApp.__init__(self, *arg, **kw)
@@ -89,13 +90,20 @@ class Controller( JoyApp ):
         self.motor_left.set_torque(0)
         self.motor_right.set_torque(0)
         self.motor_laser.set_torque(0)
-        self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 50)
 
     def onEvent(self, evt):
         if evt.type == TIMEREVENT:
-            pos = self.motor_laser.pna.mem_read_sync(self.motor_laser.mcu.present_position)
-            print pos - prev_pos
-            prev_pos = pos
+            if self.just_started == True:
+                self.stop_time = self.now + 8
+                self.just_started = False
+                self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed,
+                        171)
+                return
+            if self.now >= self.stop_time:
+                self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 0)
+                for i in range(1000000):
+                    pass
+                print self.motor_laser.pna.mem_read_sync(self.motor_laser.mcu.present_position)
 
         
     def compute_torques(self):
@@ -109,6 +117,6 @@ class Controller( JoyApp ):
         self.motor_right.pna.mem_write_fast(self.motor_right.mcu.moving_speed, motor_right_torq)
 
 
-app = Controller("#output ", robot=dict(count=3, port='/dev/ttyACM0'))
+app = Controller("#output ", robot=dict(count=3))
 app.run()
 
