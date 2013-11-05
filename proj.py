@@ -45,7 +45,7 @@ class Controller( JoyApp ):
             full right
         """
         self.turning_rate = val
-        set_motor_speeds()
+        self.set_motor_speeds()
 
     def set_speed(self, val):
         """
@@ -55,12 +55,12 @@ class Controller( JoyApp ):
             val -- unit from -1.0 to 1.0
         """
         self.moving_rate = val
-        set_motor_speeds()
+        self.set_motor_speeds()
 
     def set_turn_and_speed(self, speed, turn):
         self.moving_rate = speed
         self.turning_rate = turn
-        set_motor_speeds()
+        self.set_motor_speeds()
 
     def fix_torque_range(self, val):
         """
@@ -115,15 +115,21 @@ class Controller( JoyApp ):
             set_turn_and_speed(forward_rate_speed, turn_rate_speed)
 
     def compute_torques(self):
-        motor_left_torq = fix_torque_range((self.moving_rate + self.turning_rate)/2)
-        motor_right_torq = fix_torque_range(-(self.moving_rate - self.turning_rate)/2)
+        motor_left_torq = self.fix_torque_range((self.moving_rate + self.turning_rate)/2)
+        motor_right_torq = self.fix_torque_range(-(self.moving_rate - self.turning_rate)/2)
         return (motor_left_torq, motor_right_torq)
 
     def set_motor_speeds(self):
-        motor_left_torq, motor_right_torq = compute_torques()
+        motor_left_torq, motor_right_torq = self.compute_torques()
         self.motor_left.pna.mem_write_fast(self.motor_left.mcu.moving_speed, motor_left_torq)
         self.motor_right.pna.mem_write_fast(self.motor_right.mcu.moving_speed, motor_right_torq)
 
 
-app = Controller("#output ", robot=dict(count=3, port='/dev/ttyACM0'))
-app.run()
+def start_app():
+    sleep(1)
+    app = Controller("#output ", robot=dict(count=3, port='/dev/ttyACM0'))
+    app.run()
+    return app
+
+if __name__ == '__main__':
+    start_app()
