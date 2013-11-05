@@ -355,5 +355,5 @@ if __name__=="__main__":
         coordinates, including the next waypoint. Each time the next
         waypoint changes, it means the previous waypoint was reached.
     """
-    app=WaypointSensorApp("#output ", robot=dict(count=3, port='/dev/ttyACM0'))
+    app=WaypointSensorApp("#output ", robot=dict(count=3)) #, port='/dev/ttyACM0'))
     app.run()
