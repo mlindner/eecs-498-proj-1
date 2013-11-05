@@ -218,7 +218,7 @@ class WaypointSensorApp( JoyApp ):
             progress('PID output: ' + str(pid(offset)))
         if evt.type is KEYDOWN and evt.key is K_q:
             self.manual_controller.set_turn_and_speed(0, 0)
-        if(!self.manual_controller.onEvent(evt))
+        if not self.manual_controller.onEvent(evt):
             return super( WaypointSensorApp, self ).onEvent(evt)
 
     def onStop( self ):
