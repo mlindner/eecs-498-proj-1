@@ -256,9 +256,9 @@ class ManualController:
         self.turning_rate = 0.0
         self.moving_rate = 0.0
 
-        self.motor_left = self.robot.items()[MOTOR_LEFT][1]
-        self.motor_right = self.robot.items()[MOTOR_RIGHT][1]
-        self.motor_laser = self.robot.items()[MOTOR_LASER][1]
+        self.motor_left = self.robot.items()[self.MOTOR_LEFT][1]
+        self.motor_right = self.robot.items()[self.MOTOR_RIGHT][1]
+        self.motor_laser = self.robot.items()[self.MOTOR_LASER][1]
         self.motor_left.set_mode(1)
         self.motor_right.set_mode(1)
         self.motor_laser.set_mode(1)
