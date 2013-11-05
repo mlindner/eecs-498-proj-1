@@ -83,10 +83,11 @@ class SensorPlan( Plan ):
     remote plan to read and decode WayPoint Task sensor and waypoint
     updates.
     """
-    def __init__( self, app, peer, *arg, **kw ):
+    def __init__( self, app, peer, robot_app, *arg, **kw ):
         Plan.__init__(self, app, *arg, **kw )
         self.sock = None
         self.peer = peer
+        self.robot_app = robot_app
         self.lastSensorReading = None
         self.current_waypoint = 0
         self.nwaypoints = 4
@@ -153,8 +154,8 @@ class SensorPlan( Plan ):
             turn = min(max(pid(offset), -1.0), 1.0) # * speed ?
             progress('Offset: ' + str(offset))
             progress('Turn:     ' + str(turn))
-            if (robot_app != None):
-                robot_app.set_turn_and_speed(speed, turn)
+            if (self.robot_app != None):
+                self.robot_app.set_turn_and_speed(speed, turn)
 
             # Handle waypoint update
             if 'w' in dic:
@@ -173,7 +174,7 @@ class SensorPlan( Plan ):
                     if self.current_waypoint == 0:
                         previous_angle = pi/2
                     elif self.current_waypoint == 3:
-                        robot_app.set_turn_and_speed(0, 0) # stop robot at last waypoint
+                        self.robot_app.set_turn_and_speed(0, 0) # stop robot at last waypoint
                     else:
                         previous_angle = calculate_angle(
                             self.waypoints[self.current_waypoint-1],
@@ -201,7 +202,7 @@ class WaypointSensorApp( JoyApp ):
     def onStart( self ):
         self.output = self.setterOf(self.spec)
         # Set up the sensor receiver plan
-        self.sensor = SensorPlan(self,("141.213.30.218",8080))
+        self.sensor = SensorPlan(self,("141.213.30.218",8080), self.manual_controller)
         self.sensor.start()
 
     def onEvent( self, evt ):
@@ -216,7 +217,7 @@ class WaypointSensorApp( JoyApp ):
             progress('Offset: ' + str(offset))
             progress('PID output: ' + str(pid(offset)))
         if evt.type is KEYDOWN and evt.key is K_q:
-            robot_app.set_turn_and_speed(0, 0)
+            self.manual_controller.set_turn_and_speed(0, 0)
         if(!self.manual_controller.onEvent(evt))
             return super( WaypointSensorApp, self ).onEvent(evt)
 
