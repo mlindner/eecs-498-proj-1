@@ -31,12 +31,12 @@ def clip(value, lower, upper):
 # This code currently does no low-pass filtering to remove noise
 # XXX The sqrts should probably taken on the l and r comparents individually
 def calculate_offset(l, r):
-    maximum = 255     # maximum reading for f & b values
-    close = 30            # minimum reading for f & b values when robot is straddling
-    straddle = 90     # minimum reading for min(f, b) when straddling
+    maximum = 255   # maximum reading for f & b values
+    close = 30      # minimum reading for f & b values when robot is straddling
+    straddle = 90   # minimum reading for min(f, b) when straddling
     if l == 0 and r == 0:
-        raw = 0    # No information, so drive straight!
-                         # (maybe I should return last offset and reset to zero on turn?)
+        raw = 0     # No information, so drive straight!
+                    # (maybe I should return last offset and reset to zero on turn?)
     elif l > close and r > close: # and l + r > 2 * straddle: # XXX could help?
         # Robot is straddling line: estimate offset as difference
         raw = l - r
@@ -119,14 +119,14 @@ class SensorPlan( Plan ):
                 yield self.forDuration(0.1)
                 continue
             # if message buffer is empty --> fill it from socket
-            #     or wait for more data
+            # or wait for more data
             if len(msg)==0:
                 # receive an update / skip
                 try:
                     msg = self.sock.recv(1024)
                 except SocketError, se:
                     # If there was no data on the socket
-                    #     --> not a real error, else
+                    # --> not a real error, else
                     if se.errno != 11:
                         progress("Connection failed: "+str(se))
                         self.sock.close()
