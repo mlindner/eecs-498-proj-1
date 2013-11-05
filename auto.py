@@ -29,6 +29,7 @@ def clip(value, lower, upper):
 # Convert l and r values into robot offset (positive is to right of line)
 # This code partially assumes the robot is oriented more or less properly
 # This code currently does no low-pass filtering to remove noise
+# XXX The sqrts should probably taken on the l and r comparents individually
 def calculate_offset(l, r):
   maximum = 255   # maximum reading for f & b values
   close = 30      # minimum reading for f & b values when robot is straddling
@@ -172,7 +173,7 @@ class SensorPlan( Plan ):
           if self.current_waypoint == 0:
             previous_angle = pi/2
           elif self.current_waypoint == 3:
-            pass # XXX robot can stop or do a little dance or whatever
+            robot_app.set_turn_and_speed(0, 0) # stop robot at last waypoint
           else:
             previous_angle = calculate_angle(
               self.waypoints[self.current_waypoint-1],
