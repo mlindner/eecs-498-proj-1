@@ -188,6 +188,7 @@ class SensorPlan( Plan ):
           progress("Turn robot " + str(radians_to_degrees(turn_angle)))
           # XXX After turning, go into drive mode using offset and PID controller
       # If no more messages in buffer --> wait for a bit
+      # XXX We can turn and assume the angle will change by a fixed amount each time
       if not msg:
         yield self.forDuration(0.1)
 
