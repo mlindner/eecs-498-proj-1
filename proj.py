@@ -9,8 +9,6 @@ MOTOR_LEFT = 0
 MOTOR_RIGHT = 2
 MOTOR_LASER = 1
 
-sleep(0.5)
-
 class Controller( JoyApp ):
     # Events names generated from the concatenation of event kind + event index
     # The format is:
