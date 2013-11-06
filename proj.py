@@ -174,7 +174,7 @@ class SensorPlan( Plan ):
                 offset = calculate_offset(self.lastSensorReading[1],
                                           self.lastSensorReading[2])
                 speed = 0.3
-                turn = min(max(pid(offset), -0.5), 0.5) * speed
+                turn = clip(pid(offset), -0.5, 0.5) * speed
                 progress('Offset: ' + str(offset))
                 progress('Turn:     ' + str(turn))
 
@@ -364,12 +364,12 @@ class ManualController:
             self.values[2][kind] = (evt.value * params[1][2]) / params[0]
 
             # Sum of all motor inputs and range constrain
-            forward_rate_sum = sum(self.values[0].itervalues())
-            forward_rate_speed = min(max(forward_rate_sum, -1.0), 1.0)
-            turn_rate_sum = sum(self.values[1].itervalues())
-            turn_rate_speed = min(max(turn_rate_sum, -1.0), 1.0)
-            laser_rate_sum = sum(self.values[2].itervalues())
-            laser_rate_speed = min(max(laser_rate_sum, -1.0), 1.0)
+            forward_rate_sum   = sum(self.values[0].itervalues())
+            turn_rate_sum      = sum(self.values[1].itervalues())
+            laser_rate_sum     = sum(self.values[2].itervalues())
+            forward_rate_speed = clip(forward_rate_sum, -1.0, 1.0)
+            turn_rate_speed    = clip(turn_rate_sum,    -1.0, 1.0)
+            laser_rate_speed   = clip(laser_rate_sum,   -1.0, 1.0)
 
             self.set_turn_and_speed(forward_rate_speed, turn_rate_speed)
             self.set_laser_speed(laser_rate_speed)
