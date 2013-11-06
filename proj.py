@@ -261,18 +261,21 @@ class ManualController:
     # The format is:
     # 'eventname': (sensor_max_value, (forward_rate_max, turn_rate_max))
     events = {
-        'play0':    (127, ( 1.0,  0.0)),
-        'stop0':    (127, (-1.0,  0.0)),
-        'forward0': (127, ( 0.0,  1.0)),
-        'rewind0':  (127, ( 0.0, -1.0)),
-        'slider1':  (127, ( 1.0,  0.0)),
-        'slider2':  (127, (-1.0,  0.0)),
-        'slider3':  (127, ( 0.0, -1.0)),
-        'slider4':  (127, ( 0.0,  1.0)),
+        'play0':    (127, ( 1.0,  0.0,  0.0)),
+        'stop0':    (127, (-1.0,  0.0,  0.0)),
+        'forward0': (127, ( 0.0,  1.0,  0.0)),
+        'rewind0':  (127, ( 0.0, -1.0,  0.0)),
+        'slider1':  (127, ( 1.0,  0.0,  0.0)),
+        'slider2':  (127, (-1.0,  0.0,  0.0)),
+        'slider3':  (127, ( 0.0, -1.0,  0.0)),
+        'slider4':  (127, ( 0.0,  1.0,  0.0)),
+        'slider5':  (127, ( 0.0,  0.0, -1.0)),
+        'slider6':  (127, ( 0.0,  0.0,  1.0)),
     }
 
     # Stored values for all event types to be summed for resultant motor speed
     values = [
+        {key: 0 for key in events},
         {key: 0 for key in events},
         {key: 0 for key in events},
     ]
@@ -320,6 +323,10 @@ class ManualController:
         self.turning_rate = turn
         self.set_motor_speeds()
 
+    def set_laser_speed(self, speed):
+        rectified_speed = self.fix_torque_range(speed)
+        self.set_motor_speed(self.motor_laser, rectified_speed)
+
     def fix_torque_range(self, val):
         """
         INPUT:
@@ -354,14 +361,18 @@ class ManualController:
             # Computation the new motor input
             self.values[0][kind] = (evt.value * params[1][0]) / params[0]
             self.values[1][kind] = (evt.value * params[1][1]) / params[0]
+            self.values[2][kind] = (evt.value * params[1][2]) / params[0]
 
             # Sum of all motor inputs and range constrain
             forward_rate_sum = sum(self.values[0].itervalues())
             forward_rate_speed = min(max(forward_rate_sum, -1.0), 1.0)
             turn_rate_sum = sum(self.values[1].itervalues())
             turn_rate_speed = min(max(turn_rate_sum, -1.0), 1.0)
+            laser_rate_sum = sum(self.values[2].itervalues())
+            laser_rate_speed = min(max(laser_rate_sum, -1.0), 1.0)
 
             self.set_turn_and_speed(forward_rate_speed, turn_rate_speed)
+            self.set_laser_speed(laser_rate_speed)
             return True
         elif evt.type == TIMEREVENT:
             if cur_time >= self.stop_time and self.laser_turning:
@@ -377,17 +388,20 @@ class ManualController:
     def turn_laser(self, cur_time, radians):
         self.laser_turning = True
         if(radians < 0):
-            self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171 + 1024)
+            self.set_motor_speed(self.motor_laser, 171 + 1024)
         else:
-            self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171)
+            self.set_motor_speed(self.motor_laser, 171)
         # Turns 180 degrees in 4 seconds
         self.stop_time = cur_time + 4 * (abs(radians) / pi)
 
     def set_motor_speeds(self):
         motor_left_torq, motor_right_torq = self.compute_torques()
-        self.motor_left.pna.mem_write_fast(self.motor_left.mcu.moving_speed, motor_left_torq)
-        self.motor_right.pna.mem_write_fast(self.motor_right.mcu.moving_speed, motor_right_torq)
 
+        self.set_motor_speed(self.motor_left, motor_left_torq)
+        self.set_motor_speed(self.motor_right, motor_right_torq)
+
+    def set_motor_speed(self, motor, val):
+        motor.pna.mem_write_fast(motor.mcu.moving_speed, val)
 
 if __name__=="__main__":
     print """
