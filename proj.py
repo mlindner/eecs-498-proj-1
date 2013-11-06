@@ -57,7 +57,7 @@ offsets = [0] * (2 * noffsets)
 def pid(offset):
     global integral, noffsets, offsets
     # Parameters to tune
-    k_p = 0.015
+    k_p = 0.005
     k_i = 0.00
     k_i_limit = 20    # Maximum absolute value for integral to prevent windup
     k_d = 2.0
@@ -155,8 +155,8 @@ class SensorPlan( Plan ):
             if self.turning:
                 # Turn at waypoint
                 progress('Turn angle now {}'.format(self.turn_angle))
-                turn_amount = 0.2
-                speed = 0 # 2 * turn_amount # XXX This causes a wide turn
+                turn_amount = 0.4
+                speed = 0
                 if abs(self.turn_angle) < 2 * turn_amount:
                     # Correct orientation -- stop turning
                     turn = 0
@@ -164,10 +164,10 @@ class SensorPlan( Plan ):
                 else:
                     # Keep turning until correct orientation
                     if self.turn_angle > 0:
-                        turn = 0.4
+                        turn = 0.8
                         self.turn_angle -= turn_amount
                     else:
-                        turn = -0.4
+                        turn = -0.8
                         self.turn_angle += turn_amount
             else:
                 # Handle driving between waypoints
@@ -213,6 +213,7 @@ class SensorPlan( Plan ):
                     progress("Turn robot " + str(radians_to_degrees(turn_angle)))
                     self.turning = True
                     self.turn_angle = turn_angle
+                    self.robot_app.turn_laser(self.app.now, turn_angle)
             # If no more messages in buffer --> wait for a bit
             if not msg:
                 yield self.forDuration(0.1)
@@ -373,14 +374,14 @@ class ManualController:
         motor_right_torq = self.fix_torque_range(-(self.moving_rate - self.turning_rate)/2)
         return (motor_left_torq, motor_right_torq)
 
-    def turn_laser(cur_time, radians):
+    def turn_laser(self, cur_time, radians):
         self.laser_turning = True
         if(radians < 0):
             self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171 + 1024)
         else:
             self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171)
         # Turns 180 degrees in 4 seconds
-        self.stop_time = cur_time + 4 * (radians / pi)
+        self.stop_time = cur_time + 4 * (abs(radians) / pi)
 
     def set_motor_speeds(self):
         motor_left_torq, motor_right_torq = self.compute_torques()
