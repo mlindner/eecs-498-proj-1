@@ -335,9 +335,9 @@ class ManualController:
 
             # Sum of all motor inputs and range constrain
             forward_rate_sum = sum(self.values[0].itervalues())
-            forward_rate_speed = min(max(motor_left_sum, -1.0), 1.0)
+            forward_rate_speed = min(max(forward_rate_sum, -1.0), 1.0)
             turn_rate_sum = sum(self.values[1].itervalues())
-            turn_rate_speed = min(max(motor_right_sum, -1.0), 1.0)
+            turn_rate_speed = min(max(turn_rate_sum, -1.0), 1.0)
 
             set_turn_and_speed(forward_rate_speed, turn_rate_speed)
             return True
