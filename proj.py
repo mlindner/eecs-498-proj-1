@@ -322,6 +322,7 @@ class ManualController:
             except KeyError:
                 if kind == 'record0' and evt.value != 0:
                     auto_toggle = not auto_toggle
+                    return True
                 else:
                     return False
 
