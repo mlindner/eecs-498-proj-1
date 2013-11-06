@@ -202,7 +202,8 @@ class WaypointSensorApp( JoyApp ):
     def onStart( self ):
         self.output = self.setterOf(self.spec)
         # Set up the sensor receiver plan
-        self.sensor = SensorPlan(self,("141.213.30.218",8080), self.manual_controller)
+        #self.sensor = SensorPlan(self,("141.213.30.218", 8080), self.manual_controller)
+        self.sensor = SensorPlan(self,("127.0.0.1", 8080), self.manual_controller)
         self.sensor.start()
 
     def onEvent( self, evt ):
@@ -228,8 +229,8 @@ class WaypointSensorApp( JoyApp ):
 class ManualController:
 
     MOTOR_LEFT = 0
-    MOTOR_RIGHT = 2
-    MOTOR_LASER = 1
+    MOTOR_RIGHT = 1
+    MOTOR_LASER = 2
 
     # Events names generated from the concatenation of event kind + event index
     # The format is:
