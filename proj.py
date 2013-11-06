@@ -60,7 +60,7 @@ def pid(offset):
     k_p = 0.05
     k_i = 0.00
     k_i_limit = 20    # Maximum absolute value for integral to prevent windup
-    k_d = 0.00
+    k_d = 0.20
     k_d_limit = 1     # Maximum absolute value for derivative in case of glitch
     # Calculate integral term (sum of offsets)
     integral = clip(integral + offset, -k_i_limit, k_i_limit)
@@ -150,8 +150,8 @@ class SensorPlan( Plan ):
             # Handle driving between waypoints
             offset = calculate_offset(self.lastSensorReading[1],
                                                                 self.lastSensorReading[2])
-            speed = 0.5
-            turn = min(max(pid(offset), -1.0), 1.0) # * speed ?
+            speed = 0.3
+            turn = min(max(pid(offset), -1.0), 1.0) * speed
             progress('Offset: ' + str(offset))
             progress('Turn:     ' + str(turn))
             if (self.robot_app != None):
@@ -166,6 +166,7 @@ class SensorPlan( Plan ):
                 # If we hit a waypoint, update current waypoint and go into turn mode
                 # XXX But if we just hit auto button we need to do this too
                 if n > self.current_waypoint:
+                    print('Current waypoint is now {}'.format(n))
                     self.current_waypoint = n
                     # I think at this point we hit current_waypoint and we need to drive
                     # to current_waypoint+1
