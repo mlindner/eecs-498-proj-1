@@ -57,7 +57,7 @@ offsets = [0] * (2 * noffsets)
 def pid(offset):
     global integral, noffsets, offsets
     # Parameters to tune
-    k_p = 0.05
+    k_p = 0.015
     k_i = 0.00
     k_i_limit = 20    # Maximum absolute value for integral to prevent windup
     k_d = 2.0
