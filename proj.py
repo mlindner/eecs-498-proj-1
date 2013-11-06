@@ -52,24 +52,25 @@ def calculate_offset(l, r):
 # PID controller
 # Value returned is proportional to amount we should turn to course correct
 integral = 0
-noffsets = 2
-offsets = [0] * noffsets
+noffsets = 3
+offsets = [0] * (2 * noffsets)
 def pid(offset):
     global integral, noffsets, offsets
     # Parameters to tune
     k_p = 0.05
     k_i = 0.00
     k_i_limit = 20    # Maximum absolute value for integral to prevent windup
-    k_d = 0.20
+    k_d = 2.0
     k_d_limit = 1     # Maximum absolute value for derivative in case of glitch
     # Calculate integral term (sum of offsets)
     integral = clip(integral + offset, -k_i_limit, k_i_limit)
     # Calculate derivative term (how much the offset has changed recently)
-    derivative = clip((sum(offsets) / noffsets) - offset,
-                                        -k_d_limit, k_d_limit)
+    derivative = clip((sum(offsets[0       :  noffsets]) / noffsets) -
+                      (sum(offsets[noffsets:2*noffsets]) / noffsets),
+                      -k_d_limit, k_d_limit)
     offsets = offsets[1:] + [offset]
     # Calculate PID controller value
-    return k_p * offset + k_i * integral + k_d * derivative
+    return k_p * offset + k_i * integral - k_d * derivative
 
 # Reset PID controller after executing a turn
 def reset_pid():
@@ -94,6 +95,7 @@ class SensorPlan( Plan ):
         self.current_waypoint = 0
         self.nwaypoints = 4
         self.waypoints = [None] * self.nwaypoints
+        self.turning = False
 
     def _connect( self ):
         s = socket(AF_INET, SOCK_STREAM)
@@ -150,13 +152,32 @@ class SensorPlan( Plan ):
             ts = self.app.now
             self.lastSensorReading = (ts, dic['f'], dic['b'])
 
-            # Handle driving between waypoints
-            offset = calculate_offset(self.lastSensorReading[1],
-                                                                self.lastSensorReading[2])
-            speed = 0.3
-            turn = min(max(pid(offset), -1.0), 1.0) * speed
-            progress('Offset: ' + str(offset))
-            progress('Turn:     ' + str(turn))
+            if self.turning:
+                # Turn at waypoint
+                progress('Turn angle now {}'.format(self.turn_angle))
+                turn_amount = 0.2
+                speed = 0 # 2 * turn_amount # XXX This causes a wide turn
+                if abs(self.turn_angle) < 2 * turn_amount:
+                    # Correct orientation -- stop turning
+                    turn = 0
+                    self.turning = False
+                else:
+                    # Keep turning until correct orientation
+                    if self.turn_angle > 0:
+                        turn = 0.4
+                        self.turn_angle -= turn_amount
+                    else:
+                        turn = -0.4
+                        self.turn_angle += turn_amount
+            else:
+                # Handle driving between waypoints
+                offset = calculate_offset(self.lastSensorReading[1],
+                                          self.lastSensorReading[2])
+                speed = 0.3
+                turn = min(max(pid(offset), -0.5), 0.5) * speed
+                progress('Offset: ' + str(offset))
+                progress('Turn:     ' + str(turn))
+
             if self.robot_app != None and auto_toggle:
                 self.robot_app.set_turn_and_speed(speed, turn)
             else:
@@ -169,16 +190,15 @@ class SensorPlan( Plan ):
                 for i in range(n, self.nwaypoints):
                     self.waypoints[i] = dic['w'][i-n]
                 # If we hit a waypoint, update current waypoint and go into turn mode
-                # XXX But if we just hit auto button we need to do this too
                 if n > self.current_waypoint:
                     print('Current waypoint is now {}'.format(n))
                     self.current_waypoint = n
                     # I think at this point we hit current_waypoint and we need to drive
                     # to current_waypoint+1
                     # We will hit an "auto" button if we were driving manually
-                    # XXX Go into turn mode (calculate angle)
+                    # Go into turn mode (calculate angle)
                     if self.current_waypoint == 0:
-                        previous_angle = pi/2
+                        previous_angle = 0 # We should never actually get here
                     elif self.current_waypoint == 3:
                         self.robot_app.set_turn_and_speed(0, 0) # stop robot at last waypoint
                     else:
@@ -193,9 +213,9 @@ class SensorPlan( Plan ):
                     progress("Previous angle: " + str(radians_to_degrees(previous_angle)))
                     progress("Current angle:    " + str(radians_to_degrees(current_angle)))
                     progress("Turn robot " + str(radians_to_degrees(turn_angle)))
-                    # XXX After turning, go into drive mode using offset and PID controller
+                    self.turning = True
+                    self.turn_angle = turn_angle
             # If no more messages in buffer --> wait for a bit
-            # XXX We can turn and assume the angle will change by a fixed amount each time
             if not msg:
                 yield self.forDuration(0.1)
 
