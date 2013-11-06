@@ -159,8 +159,6 @@ class SensorPlan( Plan ):
             progress('Turn:     ' + str(turn))
             if self.robot_app != None and auto_toggle:
                 self.robot_app.set_turn_and_speed(speed, turn)
-            else:
-                self.robot_app.set_turn_and_speed(0, 0)
 
             # Handle waypoint update
             if 'w' in dic:
@@ -324,6 +322,7 @@ class ManualController:
             except KeyError:
                 if kind == 'record0' and evt.value != 0:
                     auto_toggle = not auto_toggle
+                    self.set_turn_and_speed(0, 0)
                     return True
                 else:
                     return False
