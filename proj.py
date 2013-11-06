@@ -338,7 +338,7 @@ class ManualController:
             turn_rate_sum = sum(self.values[1].itervalues())
             turn_rate_speed = min(max(turn_rate_sum, -1.0), 1.0)
 
-            set_turn_and_speed(forward_rate_speed, turn_rate_speed)
+            self.set_turn_and_speed(forward_rate_speed, turn_rate_speed)
             return True
 
         return False
