@@ -76,6 +76,8 @@ def reset_pid():
     global integral, noffsets, offsets
     integral = 0
     offsets = [0] * noffsets
+# Toggle for if we should run the automatic navigation
+auto_toggle = False
 
 class SensorPlan( Plan ):
     """
@@ -109,6 +111,7 @@ class SensorPlan( Plan ):
         self.sock = None
 
     def behavior( self ):
+        global auto_toggle
         # message buffer is empty
         msg = ''
         while True:
@@ -154,7 +157,7 @@ class SensorPlan( Plan ):
             turn = min(max(pid(offset), -1.0), 1.0) * speed
             progress('Offset: ' + str(offset))
             progress('Turn:     ' + str(turn))
-            if (self.robot_app != None):
+            if self.robot_app != None and auto_toggle:
                 self.robot_app.set_turn_and_speed(speed, turn)
 
             # Handle waypoint update
@@ -307,6 +310,7 @@ class ManualController:
         return val
 
     def onEvent(self, evt):
+        global auto_toggle
         # We only care about midi events right now
         if evt.type == MIDIEVENT:
             # Generate event name
@@ -317,7 +321,10 @@ class ManualController:
                 print(self.events[kind])
                 params = self.events[kind]
             except KeyError:
-                return False
+                if kind == 'record0' and evt.value != 0:
+                    auto_toggle = not auto_toggle
+                else:
+                    return False
 
             # Computation the new motor input
             self.values[0][kind] = (evt.value * params[1][0]) / params[0]
