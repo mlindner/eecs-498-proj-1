@@ -222,7 +222,7 @@ class WaypointSensorApp( JoyApp ):
             progress('PID output: ' + str(pid(offset)))
         if evt.type is KEYDOWN and evt.key is K_q:
             self.manual_controller.set_turn_and_speed(0, 0)
-        if not self.manual_controller.onEvent(evt):
+        if not self.manual_controller.onEvent(evt, self.now):
             return super( WaypointSensorApp, self ).onEvent(evt)
 
     def onStop( self ):
@@ -259,6 +259,8 @@ class ManualController:
         self.robot = robot
         self.turning_rate = 0.0
         self.moving_rate = 0.0
+        self.stop_time = 0.0
+        self.laser_turning = False
 
         self.motor_left = self.robot.items()[self.MOTOR_LEFT][1]
         self.motor_right = self.robot.items()[self.MOTOR_RIGHT][1]
@@ -308,7 +310,7 @@ class ManualController:
             val = -val + 1024
         return val
 
-    def onEvent(self, evt):
+    def onEvent(self, evt, cur_time):
         global auto_toggle
         # We only care about midi events right now
         if evt.type == MIDIEVENT:
@@ -339,13 +341,25 @@ class ManualController:
 
             self.set_turn_and_speed(forward_rate_speed, turn_rate_speed)
             return True
-
+        elif evt.type == TIMEREVENT:
+            if cur_time >= self.stop_time and self.laser_turning:
+                self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 0)
+                self.laser_turning = False
         return False
 
     def compute_torques(self):
         motor_left_torq = self.fix_torque_range((self.moving_rate + self.turning_rate)/2)
         motor_right_torq = self.fix_torque_range(-(self.moving_rate - self.turning_rate)/2)
         return (motor_left_torq, motor_right_torq)
+
+    def turn_laser(cur_time, radians):
+        self.laser_turning = True
+        if(radians < 0):
+            self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171 + 1024)
+        else:
+            self.motor_laser.pna.mem_write_fast(self.motor_laser.mcu.moving_speed, 171)
+        # Turns 180 degrees in 4 seconds
+        self.stop_time = cur_time + 4 * (radians / pi)
 
     def set_motor_speeds(self):
         motor_left_torq, motor_right_torq = self.compute_torques()
